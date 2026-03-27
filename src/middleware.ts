@@ -30,11 +30,15 @@ export async function middleware(req: NextRequest) {
   if (!orgSlug) return NextResponse.next()
 
   // 4. Inject headers for downstream use
-  const res = NextResponse.next()
-  res.headers.set('x-user-id', token.sub!)
-  res.headers.set('x-org-slug', orgSlug)
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('x-user-id', token.sub!)
+  requestHeaders.set('x-org-slug', orgSlug)
 
-  return res
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
 }
 
 export const config = {

@@ -27,17 +27,22 @@ export async function POST(req: NextRequest) {
       password: hashedPassword,
     })
 
-    // Create the Stripe customer for them
-    const { stripe } = await import('@/lib/stripe/client')
-    const customer = await stripe.customers.create({
-      email: user.email,
-      name: user.name,
-      metadata: { userId: user._id.toString() }
-    })
-
-    // Attach stripe ID back to the user
-    user.stripeCustomerId = customer.id
-    await user.save()
+    // Create the Stripe customer for them if key exists
+    if (process.env.STRIPE_SECRET_KEY) {
+      try {
+        const { stripe } = await import('@/lib/stripe/client')
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.name,
+          metadata: { userId: user._id.toString() }
+        })
+        // Attach stripe ID back to the user
+        user.stripeCustomerId = customer.id
+        await user.save()
+      } catch (e: any) {
+        console.error("Stripe Skipped:", e.message)
+      }
+    }
 
     return NextResponse.json({
       message: 'User created successfully',
